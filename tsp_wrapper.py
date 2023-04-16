@@ -11,6 +11,9 @@ class TspWrapper:
 
     def get_edge_weight(self, vertex_1: int, vertex_2: int) -> int:
         return self.problem.get_weight(vertex_1, vertex_2)
+    
+    def get_vertices(self) -> list[int]:
+        return list(self.problem.get_nodes())
 
     @staticmethod
     def from_atsp_full_matrix(path: str):
