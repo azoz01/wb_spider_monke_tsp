@@ -2,7 +2,8 @@ from __future__ import annotations
 
 import numpy as np
 import tsplib95
-from itertools import chain
+from functools import lru_cache
+from engine.utils import numpy_to_tuple
 
 
 class TspWrapper:
@@ -12,10 +13,10 @@ class TspWrapper:
     def get_vertices(self) -> list[int]:
         return np.array(list(self.problem.get_nodes()))
 
-    def calculate_cost(self, path: np.ndarray, positive: bool = False) -> int:
-        mult = 1 if positive else -1
-        path = path.tolist()
-        return mult * np.sum(
+    @numpy_to_tuple
+    @lru_cache(maxsize=10_000)
+    def calculate_cost(self, path: np.ndarray) -> int:
+        return np.sum(
             [
                 self._get_edge_weight(v1, v2)
                 for v1, v2 in zip(path[:-1], path[1:])
