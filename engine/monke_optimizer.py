@@ -54,6 +54,7 @@ class MonkeOptimizer:
         best_solution = self.global_leader
         best_cost = tsp_problem.calculate_cost(self.global_leader)
         for i in iterator:
+
             for group in groups:
                 self.local_leader_phase(group=group, tsp_problem=tsp_problem)
             for group in groups:
