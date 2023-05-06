@@ -2,7 +2,9 @@ from __future__ import annotations
 
 import numpy as np
 import tsplib95
+
 from functools import lru_cache
+
 from engine.utils import numpy_to_tuple
 
 

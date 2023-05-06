@@ -1,12 +1,14 @@
 from __future__ import annotations
-import numpy as np
-from engine.tsp import TspWrapper
-from typing import List, Tuple
-from operator import attrgetter, add
-from functools import reduce
-from tqdm import tqdm
-from time import time
 
+import numpy as np
+
+from functools import reduce
+from operator import attrgetter, add
+from time import time
+from tqdm import tqdm
+from typing import List, Tuple
+
+from engine.tsp import TspWrapper
 from engine.utils import (
     decompose_permutation_to_swap_sequence,
     permutation_difference,
