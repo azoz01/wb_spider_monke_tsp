@@ -48,7 +48,7 @@ def make_plots(dir_path: str, df_results: pd.DataFrame) -> None:
     cost_plot.set(title="Best cost in time")
 
     cost_fig = cost_plot.get_figure()
-    cost_fig.savefig(join(dir_path, "cost_plot.png"))
+    cost_fig.savefig(join(dir_path, "cost_plot.png"), format="png")
 
     plt.clf()
 
@@ -57,7 +57,7 @@ def make_plots(dir_path: str, df_results: pd.DataFrame) -> None:
     iter_time_plot.set(title="Time of each iteration")
 
     iter_time_fig = iter_time_plot.get_figure()
-    iter_time_fig.savefig(join(dir_path, "iter_time_plot.png"))
+    iter_time_fig.savefig(join(dir_path, "iter_time_plot.png"), format="png")
 
     plt.clf()
 
@@ -66,7 +66,7 @@ def make_plots(dir_path: str, df_results: pd.DataFrame) -> None:
     no_groups_plot.set(title="Number of groups in time")
 
     no_groups_fig = no_groups_plot.get_figure()
-    no_groups_fig.savefig(join(dir_path, "no_grups_in_time.png"))
+    no_groups_fig.savefig(join(dir_path, "no_grups_in_time.png"), format="png")
 
     plt.clf()
 
@@ -86,4 +86,4 @@ def make_plots(dir_path: str, df_results: pd.DataFrame) -> None:
     phase_plot.set(title="Time of algorithm phases (in seconds)")
 
     phase_fig = phase_plot.get_figure()
-    phase_fig.savefig(join(dir_path, "phases_time.png"))
+    phase_fig.savefig(join(dir_path, "phases_time.png"), format="png")
