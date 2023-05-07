@@ -1,7 +1,9 @@
 numpy==1.24.2
 PyYAML==6.0
-PyYAML==6.0
 tqdm==4.65.0
 tsplib95==0.7.1
 typer==0.9.0
 typing_extensions==4.5.0
+pandas==2.0.1
+seaborn==0.12.2
+pyfiglet==0.8.post1

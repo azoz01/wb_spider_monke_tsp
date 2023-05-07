@@ -10,7 +10,7 @@ def decompose_permutation_to_swap_sequence(permutation):
     swaps = []
     n = len(permutation)
     vistited = [0] * n
-    
+
     for i in range(n):
         if vistited[i] == 0:
             vistited[i] = 1
@@ -20,14 +20,16 @@ def decompose_permutation_to_swap_sequence(permutation):
                     swaps.append((curr_idx, permutation[curr_idx]))
                     curr_idx = permutation[curr_idx]
                     vistited[curr_idx] = 1
-                    
+
     return np.array(swaps)
+
 
 def swap_sequence_to_permutation(ss):
     permutation = np.arange(np.max(ss) + 1)
     for idx1, idx2 in ss:
         permutation[idx1], permutation[idx2] = permutation[idx2], permutation[idx1]
     return permutation
+
 
 def merge_swap_sequences(ss1, ss2):
     return ss1.tolist() + ss2.tolist()

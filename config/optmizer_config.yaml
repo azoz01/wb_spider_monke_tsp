@@ -1,5 +1,5 @@
-allowed_maximum_groups: 50
-perturbation_rate: 0.5
-local_leader_limit: 4
-global_leader_limit: 7
-monkes_count: 100
+allowed_maximum_groups: 4
+perturbation_rate: 0.4
+local_leader_limit: 3
+global_leader_limit: 5
+monkes_count: 80

@@ -2,13 +2,13 @@ from __future__ import annotations
 
 import numpy as np
 
-from functools import reduce
-from operator import attrgetter, add
+from operator import attrgetter
 from time import time
 from tqdm import tqdm
 from typing import List, Tuple
 
 from engine.tsp import TspWrapper
+from engine.report import make_report
 from engine.utils import (
     decompose_permutation_to_swap_sequence,
     permutation_difference,
@@ -37,14 +37,26 @@ class MonkeOptimizer:
     def optimize(
         self,
         tsp_problem: TspWrapper,
+        run_name: str,
         timeout_seconds: int = 3600,
         n_iter: int = 1000,
     ) -> Tuple[np.ndarray, float]:
+        results = {
+            "iteration": [],
+            "best_cost": [],
+            "number_of_groups": [],
+            "iteration_time": [],
+            "local_leader_phase_time": [],
+            "global_leader_phase_time": [],
+            "local_leader_learning": [],
+            "global_leader_learning": [],
+            "local_leader_decision_phase": [],
+            "global_leader_decision_phase": [],
+        }
+
         start_time = time()
         vertices = tsp_problem.get_vertices()
-        monkes = [
-            np.random.permutation(vertices) for _ in range(self.monkes_count)
-        ]
+        monkes = [np.random.permutation(vertices) for _ in range(self.monkes_count)]
 
         costs = list(map(tsp_problem.calculate_cost, monkes))
         self.global_leader = monkes[np.argmin(costs)]
@@ -54,34 +66,99 @@ class MonkeOptimizer:
         best_solution = self.global_leader
         best_cost = tsp_problem.calculate_cost(self.global_leader)
         for i in iterator:
+            iteration_start_time = time()
 
+            time_start_local_leader_phase = time()
             for group in groups:
                 self.local_leader_phase(group=group, tsp_problem=tsp_problem)
+            time_end_local_leader_phase = time()
+
+            time_start_global_leader_phase = time()
             for group in groups:
                 self.global_leader_phase(
                     group=group,
                     global_leader=self.global_leader,
                     tsp_problem=tsp_problem,
                 )
-            self.local_leader_learning(groups=groups, tsp_problem=tsp_problem)
-            self.global_leader_learning(groups=groups, tsp_problem=tsp_problem)
+            time_end_global_leader_phase = time()
 
+            time_start_local_leader_learning = time()
+            self.local_leader_learning(groups=groups, tsp_problem=tsp_problem)
+            time_end_local_leader_learning = time()
+
+            time_start_global_leader_learning = time()
+            self.global_leader_learning(groups=groups, tsp_problem=tsp_problem)
+            time_end_global_leader_learning = time()
+
+            time_start_local_leader_decision_phase = time()
             self.local_leader_decision_phase(
                 groups=groups, vertices=vertices, tsp_problem=tsp_problem
             )
+            time_end_local_leader_decision_phase = time()
+
+            time_start_global_leader_decision_phase = time()
             groups = self.global_leader_decision_phase(
                 groups=groups, tsp_problem=tsp_problem
             )
+            time_end_global_leader_decision_phase = time()
 
             global_leader_cost = tsp_problem.calculate_cost(self.global_leader)
             if global_leader_cost < best_cost:
                 best_solution = self.global_leader.copy()
                 best_cost = global_leader_cost
 
-            iterator.set_description(f"Lowest cost found: {best_cost}")
+            iterator.set_description(
+                f"Lowest cost found: {best_cost}, number of groups: {len(groups)}"
+            )
+
+            iteration_end_time = time()
+
+            # update report dict
+            results["iteration"].append(i)
+            results["best_cost"].append(best_cost)
+            results["number_of_groups"].append(len(groups))
+            results["iteration_time"].append(iteration_end_time - iteration_start_time)
+            results["local_leader_phase_time"].append(
+                time_end_local_leader_phase - time_start_local_leader_phase
+            )
+            results["global_leader_phase_time"].append(
+                time_end_global_leader_phase - time_start_global_leader_phase
+            )
+            results["local_leader_learning"].append(
+                time_end_local_leader_learning - time_start_local_leader_learning
+            )
+            results["global_leader_learning"].append(
+                time_end_global_leader_learning - time_start_global_leader_learning
+            )
+            results["local_leader_decision_phase"].append(
+                time_end_local_leader_decision_phase
+                - time_start_local_leader_decision_phase
+            )
+            results["global_leader_decision_phase"].append(
+                time_end_global_leader_decision_phase
+                - time_start_global_leader_decision_phase
+            )
 
             if time() - start_time > timeout_seconds:
                 break
+
+        run_params = {
+            "allowed_maximum_groups": self.allowed_maximum_groups,
+            "perturbation_rate": self.perturbation_rate,
+            "local_leader_limit": self.local_leader_limit,
+            "global_leader_limit": self.global_leader_limit,
+            "monkes_count": self.monkes_count,
+        }
+
+        make_report(
+            path=run_name,
+            run_params=run_params,
+            results_dict=results,
+            run_time=start_time,
+            best_solution=best_solution,
+            best_cost=best_cost,
+        )
+
         return best_solution, best_cost
 
     class MonkeGroup:
@@ -97,9 +174,7 @@ class MonkeOptimizer:
         for i in range(len(group)):
             if np.random.random() >= self.perturbation_rate:
                 monke = group.monkes[i]
-                random_monke = group.monkes[
-                    np.random.choice(np.arange(len(group)))
-                ]
+                random_monke = group.monkes[np.random.choice(np.arange(len(group)))]
 
                 ss1 = decompose_permutation_to_swap_sequence(
                     permutation_difference(monke, group.leader)
@@ -111,9 +186,9 @@ class MonkeOptimizer:
                 ss2 = choose_in_order(ss2)
                 merged_ss = merge_swap_sequences(ss1, ss2)
                 new_monke = apply_swap_sequence(monke, merged_ss)
-                if tsp_problem.calculate_cost(
-                    new_monke
-                ) < tsp_problem.calculate_cost(monke):
+                if tsp_problem.calculate_cost(new_monke) < tsp_problem.calculate_cost(
+                    monke
+                ):
                     group.monkes[i] = new_monke
 
     def global_leader_phase(
@@ -131,9 +206,7 @@ class MonkeOptimizer:
                 + 0.1
             )
             if np.random.random() <= prob:
-                random_monke = group.monkes[
-                    np.random.choice(np.arange(len(group)))
-                ]
+                random_monke = group.monkes[np.random.choice(np.arange(len(group)))]
                 ss1 = decompose_permutation_to_swap_sequence(
                     permutation_difference(monke, global_leader)
                 )
@@ -144,9 +217,9 @@ class MonkeOptimizer:
                 ss2 = choose_in_order(ss2)
                 merged_ss = merge_swap_sequences(ss1, ss2)
                 new_monke = apply_swap_sequence(monke, merged_ss)
-                if tsp_problem.calculate_cost(
-                    new_monke
-                ) < tsp_problem.calculate_cost(monke):
+                if tsp_problem.calculate_cost(new_monke) < tsp_problem.calculate_cost(
+                    monke
+                ):
                     group.monkes[i] = new_monke
 
     def local_leader_learning(self, groups, tsp_problem: TspWrapper):
@@ -160,9 +233,7 @@ class MonkeOptimizer:
             else:
                 group.counter += 1
 
-    def global_leader_learning(
-        self, groups: List[MonkeGroup], tsp_problem: TspWrapper
-    ):
+    def global_leader_learning(self, groups: List[MonkeGroup], tsp_problem: TspWrapper):
         local_leaders = list(map(attrgetter("leader"), groups))
         leaders_costs = list(map(tsp_problem.calculate_cost, local_leaders))
         min_cost_leader_idx = np.argmin(leaders_costs)
@@ -219,24 +290,20 @@ class MonkeOptimizer:
                 group_new_1 = self.MonkeGroup(
                     group_new_1,
                     group_new_1[
-                        np.argmin(
-                            list(map(tsp_problem.calculate_cost, group_new_1))
-                        )
+                        np.argmin(list(map(tsp_problem.calculate_cost, group_new_1)))
                     ],
                 )
                 group_new_2 = self.MonkeGroup(
                     group_new_2,
                     group_new_2[
-                        np.argmin(
-                            list(map(tsp_problem.calculate_cost, group_new_2))
-                        )
+                        np.argmin(list(map(tsp_problem.calculate_cost, group_new_2)))
                     ],
                 )
                 groups.append(group_new_1)
                 groups.append(group_new_2)
             else:
-                consolidated_group_monkes = reduce(
-                    add, map(attrgetter("monkes"), groups)
+                consolidated_group_monkes = np.concatenate(
+                    list(map(attrgetter("monkes"), groups))
                 )
                 leader = self.global_leader
                 groups = [self.MonkeGroup(consolidated_group_monkes, leader)]
