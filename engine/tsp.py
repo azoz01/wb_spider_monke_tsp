@@ -20,7 +20,7 @@ class TspWrapper:
     def calculate_cost(self, path: np.ndarray) -> int:
         return np.sum(
             [self._get_edge_weight(v1, v2) for v1, v2 in zip(path[:-1], path[1:])]
-        )
+        ) + self._get_edge_weight(path[-1], path[0])
 
     def _get_edge_weight(self, vertex_1: int, vertex_2: int) -> int:
         return self.problem.get_weight(vertex_1, vertex_2)
