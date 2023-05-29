@@ -1,5 +1,6 @@
 import typer
 import yaml
+import numpy as np
 import pyfiglet
 
 from typing_extensions import Annotated
@@ -27,7 +28,9 @@ def main(
     timeout_seconds: Annotated[
         int, typer.Option(..., help="Maximum optimization time")
     ] = 300,
+    seed: Annotated[int, typer.Option(..., help="Seed")] = 123,
 ):
+    np.random.seed(seed)
     ascii_banner = pyfiglet.figlet_format("MONKE")
     print(ascii_banner)
 
@@ -37,7 +40,10 @@ def main(
         optimizer_config = yaml.load(f, Loader=yaml.CLoader)
     optimizer = MonkeOptimizer(**optimizer_config)
     solution, best_cost = optimizer.optimize(
-        problem, timeout_seconds=timeout_seconds, n_iter=n_iter, run_name=run_name
+        problem,
+        timeout_seconds=timeout_seconds,
+        n_iter=n_iter,
+        run_name=run_name,
     )
     print(f"{solution=}")
     print(f"{best_cost=}")
